@@ -8,4 +8,14 @@
     <string name="nova_viagem">Nova Viagem</string>
     <string name="minhas_viagens">Minhas Viagens</string>
     <string name="configuracoes">Configurações</string>
+    <string name="destino">Destino</string>
+    <string name="tipo_da_viagem">Tipo da Viagem</string>
+    <string name="lazer">Lazer</string>
+    <string name="negocios">Negocios</string>
+    <string name="data_da_chegada">Data da Chegada</string>
+    <string name="data_da_saida">Data da Saída</string>
+    <string name="selecione">Selecione</string>
+    <string name="orcamento">Orçamento</string>
+    <string name="quantidade_de_pessoas">Quantidade de Pessoas</string>
+    <string name="salvar">Salvar</string>
 </resources>
