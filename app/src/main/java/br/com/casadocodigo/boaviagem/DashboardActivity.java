@@ -21,10 +21,6 @@ public class DashboardActivity extends Activity{
             case R.id.nova_viagem:
                 startActivity( new Intent(this, ViagemActivity.class));
                 break;
-
-                default:
-                    String opcao = "Opção: " + ((TextView) v).getText().toString();
-                    Toast.makeText(this, opcao, Toast.LENGTH_SHORT).show();
         }
 
 

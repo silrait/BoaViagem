@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#015488"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_gravity="center"
+                android:text="@string/novo_gasto"
+                android:textAppearance="@android:style/TextAppearance.Large"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/destino"
+                android:layout_gravity="center"
+                android:textAppearance="@android:style/TextAppearance.Large"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <TextView
+            android:text="@string/categoria"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Spinner
+            android:id="@+id/categoria"
+            android:prompt="@string/categoria"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"></Spinner>
+
+        <TableLayout
+            android:stretchColumns="0,1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow>
+                <TextView android:text="@string/valor" />
+
+                <TextView
+                    android:layout_gravity="center"
+                    android:text="@string/data"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </TableRow>
+
+            <TableRow>
+                <EditText
+                    android:id="@+id/valor"
+                    android:inputType="numberDecimal"/>
+
+                <Button
+                    android:id="@+id/data"
+                    android:onClick="selecionarData"
+                    android:text="@string/selecione"
+                    android:layout_gravity="center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </TableRow>
+
+            <TextView
+                android:text="@string/descricao"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <EditText
+                android:id="@+id/descricao"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="text"/>
+
+            <TextView
+                android:text="@string/local"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <EditText
+                android:id="@+id/local"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="text"/>
+
+            <Button
+                android:text="@string/gastei"
+                android:onClick="registrarGasto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+
+        </TableLayout>
+    </LinearLayout>
+</ScrollView>
