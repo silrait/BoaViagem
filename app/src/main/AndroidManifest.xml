@@ -9,6 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.NoTitleBar">
+
         <activity
             android:label="@string/app_name"
             android:name=".BoaViagemActivity">
