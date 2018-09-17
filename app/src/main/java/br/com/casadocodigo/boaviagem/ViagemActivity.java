@@ -1,6 +1,8 @@
 package br.com.casadocodigo.boaviagem;
 
 import android.app.Activity;
+import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
@@ -10,6 +12,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.Toast;
@@ -18,14 +21,38 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class ViagemActivity extends Activity{
-    public static final int VIAGEM_NEGOCIO = 1;
-    public static final int VIAGEM_LAZER = 2;
 
     private DatabaseHelper helper;
     private EditText destino, quantidadePessoas, orcamento;
     private RadioGroup radioGroup;
     private int ano, mes, dia;
+    private Date dataChegada, dataSaida;
     private Button dataChegadaButton, dataSaidaButton;
+
+    private DatePickerDialog.OnDateSetListener listener = new DatePickerDialog.OnDateSetListener() {
+        @Override
+        public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+            Button pickedButton = null;
+            Date fullDate = new Date(year, month, dayOfMonth);
+            int id = view.getId();
+
+            if(R.id.dataSaida == id ){
+                pickedButton = dataSaidaButton;
+                dataSaida = fullDate;
+            } else if(R.id.dataChegada == id){
+                pickedButton = dataChegadaButton;
+                dataSaida = fullDate;
+            }
+
+            if( pickedButton != null ) pickedButton.setText(dayOfMonth + "/" + (month+1) + "/" + year);
+        }
+    };
+
+    @Override
+    public void onDestroy(){
+        helper.close();
+        super.onDestroy();
+    }
 
     @Override
     public void onCreate(Bundle savedInstaceState){
@@ -69,21 +96,33 @@ public class ViagemActivity extends Activity{
         }
     }
 
+    @Override
+    protected Dialog onCreateDialog(int id){
+        if(R.id.dataChegada == id || R.id.dataSaida == id){
+            return new DatePickerDialog(this, listener, ano, mes, dia);
+        }
+        return null;
+    }
+
+    public void selecionarData(View view){
+        showDialog(view.getId());
+    }
+
     public void salvarViagem(View view){
         SQLiteDatabase db = helper.getWritableDatabase();
 
         ContentValues values = new ContentValues();
         values.put("destino", destino.getText().toString());
-        values.put("dataChegada", dataChegadaButton.getText().toString());
-        values.put("dataSaida", dataSaidaButton.getText().toString());
+        values.put("dataChegada", dataChegada.getTime());
+        values.put("dataSaida", dataSaida.getTime());
         values.put("orcamento", orcamento.getText().toString());
         values.put("quantidade_pessoas", quantidadePessoas.getText().toString());
 
         int tipo = radioGroup.getCheckedRadioButtonId();
         if(tipo == R.id.lazer){
-            values.put("tipo_viagem", ViagemActivity.VIAGEM_LAZER);
+            values.put("tipo_viagem", Constantes.VIAGEM_LAZER);
         }else {
-            values.put("tipo_viagem", ViagemActivity.VIAGEM_NEGOCIO);
+            values.put("tipo_viagem", Constantes.VIAGEM_NEGOCIO);
         }
 
         long resultado = db.insert("viagem", null, values);
