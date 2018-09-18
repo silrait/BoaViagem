@@ -4,13 +4,19 @@ import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +27,11 @@ public class ViagemListActivity extends ListActivity
     private List<Map<String, Object>> viagens;
     private AlertDialog alertDialog;
     private int viagemSelecionada;
+
+    private DatabaseHelper helper;
+    private SimpleDateFormat dateFormat;
+    private Double valorLimite;
+    private String id;
 
     private class ViagemViewBinder implements SimpleAdapter.ViewBinder {
         @Override
@@ -41,6 +52,12 @@ public class ViagemListActivity extends ListActivity
     protected void onCreate(Bundle savedInstaceState){
         super.onCreate(savedInstaceState);
 
+        helper = new DatabaseHelper(this);
+        dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        SharedPreferences preferencias = PreferenceManager.getDefaultSharedPreferences(this);
+
+        valorLimite = Double.valueOf( preferencias.getString("valor_limite", "-1"));
+
         String[] de = {"imagem", "destino", "data", "total", "barraProgresso"};
         int[] para = {R.id.tipoViagem, R.id.destino, R.id.data, R.id.valor, R.id.barraProgresso};
         SimpleAdapter simpleAdapter = new SimpleAdapter(
@@ -54,26 +71,70 @@ public class ViagemListActivity extends ListActivity
 
         getListView().setOnItemClickListener(this);
         this.alertDialog = criaAlertDialog();
+
+        id = getIntent().getStringExtra(Constantes.VIAGEM_ID);
+        if(id!=null){
+            prepararEdicao();
+        }
+    }
+
+    protected void prepararEdicao(){
+
+    }
+
+    protected double calcularTotalGasto(SQLiteDatabase db, String id){
+        Cursor cursor = db.rawQuery("SELECT SUM(valor) FROM gasto WHERE viagem_id = ?", new String[]{id});
+        cursor.moveToFirst();
+        double total = cursor.getDouble(0);
+        cursor.close();
+
+        return total;
     }
 
     protected List<Map<String, Object>>  listarViagens(){
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT _id, tipo_viagem, destino," +
+                "data_chegada, data_saida, orcamento FROM viagem", null);
+
+        cursor.moveToFirst();
+
         viagens = new ArrayList<Map<String, Object>>();
+        for(int i =0; i < cursor.getCount(); i++){
+            Map<String,Object> item = new HashMap<String, Object>();
 
-        Map<String,Object> item = new HashMap<String, Object>();
-        item.put("imagem", R.drawable.negocios);
-        item.put("destino", "São Paulo");
-        item.put("data", "02/02/2012 a 04/02/2012");
-        item.put("total", "Gasto total R$ 314,98");
-        item.put("barraProgresso", new Double[]{500.0, 450.0, 314.98});
-        viagens.add(item);
+            String id = cursor.getString(0);
+            int tipoViagem = cursor.getInt(1);
+            String destino = cursor.getString(2);
+            long dataChegada = cursor.getLong(3);
+            long dataSaida = cursor.getLong(4);
+            double orcamento = cursor.getDouble(5);
 
-        item = new HashMap<String, Object>();
-        item.put("imagem", R.drawable.lazer);
-        item.put("destino", "Maceió");
-        item.put("data", "14/05/2012 a 22/05/2012");
-        item.put("total", "Gasto total R$ 25834,67");
-        item.put("barraProgresso", new Double[]{30000.0, 28000.0, 25834.67});
-        viagens.add(item);
+            item.put("id", id);
+
+            if(tipoViagem == Constantes.VIAGEM_LAZER){
+                item.put("imagem", R.drawable.lazer);
+            }else{
+                item.put("imagem", R.drawable.negocios);
+            }
+            item.put("destino", destino);
+
+            Date dataChegadaDate = new Date(dataChegada);
+            Date dataSaidaDate = new Date(dataSaida);
+            String periodo = dateFormat.format(dataChegadaDate) + "a" +
+                    dateFormat.format(dataSaidaDate);
+            item.put("data", periodo);
+
+            double totalGasto = calcularTotalGasto(db, id);
+            item.put("total", "Gasto total R$ " + totalGasto);
+
+            double alerta = orcamento * valorLimite / 100;
+            Double[] valores = new Double[]{orcamento, alerta, totalGasto};
+            item.put("barraProgresso", valores);
+            viagens.add(item);
+
+            cursor.moveToNext();
+        }
+        cursor.close();
 
         return viagens;
     }
@@ -99,9 +160,14 @@ public class ViagemListActivity extends ListActivity
 
     @Override
     public void onClick(DialogInterface dialog, int item) {
+        Intent intent;
+        String id = (String) viagens.get(viagemSelecionada).get("id");
+
         switch (item){
             case 0:
-                startActivity( new Intent(this, ViagemActivity.class));
+                intent = new Intent(this, ViagemActivity.class);
+                intent.putExtra(Constantes.VIAGEM_ID, id);
+                startActivity(intent);
                 break;
 
             case 1:
