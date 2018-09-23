@@ -14,12 +14,21 @@ import android.widget.AdapterView;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.DeleteBuilder;
+import com.j256.ormlite.stmt.PreparedDelete;
+
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import br.com.casadocodigo.boaviagem.dao.DBHelper;
+import br.com.casadocodigo.boaviagem.model.Gasto;
+import br.com.casadocodigo.boaviagem.model.Viagem;
 
 public class ViagemListActivity extends ListActivity
         implements AdapterView.OnItemClickListener, DialogInterface.OnClickListener {
@@ -28,7 +37,7 @@ public class ViagemListActivity extends ListActivity
     private AlertDialog alertDialog;
     private int viagemSelecionada;
 
-    private DatabaseHelper helper;
+    private DBHelper helper;
     private SimpleDateFormat dateFormat;
     private Double valorLimite;
 
@@ -51,7 +60,7 @@ public class ViagemListActivity extends ListActivity
     protected void onCreate(Bundle savedInstaceState){
         super.onCreate(savedInstaceState);
 
-        helper = new DatabaseHelper(this);
+        helper = new DBHelper(this);
         dateFormat = new SimpleDateFormat("dd/MM/yyyy");
         SharedPreferences preferencias = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -72,59 +81,84 @@ public class ViagemListActivity extends ListActivity
         this.alertDialog = criaAlertDialog();
     }
 
-    protected double calcularTotalGasto(SQLiteDatabase db, String id){
-        Cursor cursor = db.rawQuery("SELECT SUM(valor) FROM gasto WHERE viagem_id = ?", new String[]{id});
+    @Override
+    public void onDestroy(){
+        helper.close();
+        super.onDestroy();
+    }
+
+    protected double calcularTotalGasto(Long id){
+        double total = 0.0;
+        try {
+            Dao<Gasto, Long> dao = helper.getGastoDAO();
+            List<Gasto> gastos = dao.queryBuilder()
+                    .selectRaw("SUM(valor)")
+                    .where()
+                    .eq(Gasto.VIAGEM_ID, id)
+                    .query();
+            total = gastos.get(0).getValor();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+       /* Cursor cursor = db.rawQuery("SELECT SUM(valor) FROM gasto WHERE viagem_id = ?", new String[]{id});
         cursor.moveToFirst();
         double total = cursor.getDouble(0);
-        cursor.close();
+        cursor.close();*/
 
         return total;
     }
 
     protected List<Map<String, Object>>  listarViagens(){
-        SQLiteDatabase db = helper.getReadableDatabase();
+        /*SQLiteDatabase db = helper.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT _id, tipo_viagem, destino," +
                 "data_chegada, data_saida, orcamento FROM viagem", null);
 
-        cursor.moveToFirst();
+        cursor.moveToFirst();*/
+
+        List<Viagem> viagemList = null;
+
+        try {
+            viagemList = helper.getViagemDAO().queryForAll();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        if(viagemList == null)
+            return null;
 
         viagens = new ArrayList<Map<String, Object>>();
-        for(int i =0; i < cursor.getCount(); i++){
+        for(int i = 0; i < viagemList.size(); i++){
+            Viagem v = viagemList.get(i);
             Map<String,Object> item = new HashMap<String, Object>();
 
-            String id = cursor.getString(0);
+            /*String id = cursor.getString(0);
             int tipoViagem = cursor.getInt(1);
             String destino = cursor.getString(2);
             long dataChegada = cursor.getLong(3);
             long dataSaida = cursor.getLong(4);
-            double orcamento = cursor.getDouble(5);
+            double orcamento = cursor.getDouble(5);*/
 
-            item.put("id", id);
+            item.put("id", v.getId());
 
-            if(tipoViagem == Constantes.VIAGEM_LAZER){
+            if(v.getTipoViagem() == Constantes.VIAGEM_LAZER){
                 item.put("imagem", R.drawable.lazer);
             }else{
                 item.put("imagem", R.drawable.negocios);
             }
-            item.put("destino", destino);
+            item.put("destino", v.getDestino());
 
-            Date dataChegadaDate = new Date(dataChegada);
-            Date dataSaidaDate = new Date(dataSaida);
-            String periodo = dateFormat.format(dataChegadaDate) + "a" +
-                    dateFormat.format(dataSaidaDate);
+            String periodo = dateFormat.format(v.getDataChegada()) + "a" +
+                    dateFormat.format(v.getDataSaida());
             item.put("data", periodo);
 
-            double totalGasto = calcularTotalGasto(db, id);
+            double totalGasto = calcularTotalGasto(v.getId());
             item.put("total", "Gasto total R$ " + totalGasto);
 
-            double alerta = orcamento * valorLimite / 100;
-            Double[] valores = new Double[]{orcamento, alerta, totalGasto};
+            double alerta = v.getOrcamento() * valorLimite / 100;
+            Double[] valores = new Double[]{v.getOrcamento(), alerta, totalGasto};
             item.put("barraProgresso", valores);
             viagens.add(item);
-
-            cursor.moveToNext();
         }
-        cursor.close();
 
         return viagens;
     }
@@ -155,17 +189,17 @@ public class ViagemListActivity extends ListActivity
         String id = (String) viagens.get(viagemSelecionada).get("id");
 
         switch (item){
-            case 0:
+            case 0: //editar viagem
                 intent = new Intent(this, ViagemActivity.class);
-                intent.putExtra(Constantes.VIAGEM_ID, id);
+                intent.putExtra(Constantes.VIAGEM_ID, id );
                 startActivity(intent);
                 break;
 
-            case 1:
+            case 1: //novo gasto
                 startActivity( new Intent(this, GastoActivity.class));
                 break;
 
-            case 2:
+            case 2: //lista de gastos realizados
                 startActivity( new Intent(this, GastoListActivity.class));
                 break;
             case DialogInterface.BUTTON_POSITIVE:
@@ -176,10 +210,22 @@ public class ViagemListActivity extends ListActivity
         }
     }
 
-    private void removerViagem(String id){
-        SQLiteDatabase db = helper.getWritableDatabase();
+    private void removerViagem(String idS){
+        Long id = new Long(idS);
+
+        try {
+            DeleteBuilder<Gasto,Long> deleteBuilder = helper.getGastoDAO().deleteBuilder();
+            deleteBuilder.where().eq(DatabaseHelper.Gasto.VIAGEM_ID, id);
+            deleteBuilder.delete();
+
+            helper.getGastoDAO().deleteById(id);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        /*SQLiteDatabase db = helper.getWritableDatabase();
         String[] where = new String[]{ id };
         db.delete("gasto", "viagem_id = ?", where );
-        db.delete("viagem", "_id = ?", where );
+        db.delete("viagem", "_id = ?", where );*/
     }
 }

@@ -39,6 +39,7 @@
     <string name="valor_limite">Valor Limite</string>
     <string name="manter_conectado">Manter Conectado</string>
     <string name="registro_salvo">Registro Salvo</string>
+    <string name="viagem_removida">Viagem Removida</string>
     <string name="erro_salvar">Erro ao Salvar</string>
     <string-array name="categoria_gasto">
         <item>Alimentação</item>

@@ -144,8 +144,8 @@ public class BoaViagemDAO {
         values.put(DatabaseHelper.Gasto.VALOR,
                 gasto.getValor());
 
-        values.put(DatabaseHelper.Gasto.VIAGEM_ID,
-                gasto.getViagemId());
+//        values.put(DatabaseHelper.Gasto.VIAGEM_ID,
+//                gasto.getViagemId());
 
         return getDb().insert(DatabaseHelper.Gasto.TABELA,
                 null, values);
@@ -199,8 +199,8 @@ public class BoaViagemDAO {
     }
 
     private Gasto criarGasto(Cursor cursor) {
-        Gasto gasto = new Gasto(
-                cursor.getLong(cursor.getColumnIndex(
+        Gasto gasto = new Gasto();
+/*                cursor.getLong(cursor.getColumnIndex(
                         DatabaseHelper.Gasto._ID)),
 
                 new Date(cursor.getLong(cursor.getColumnIndex(
@@ -220,7 +220,7 @@ public class BoaViagemDAO {
 
                 cursor.getInt(cursor.getColumnIndex(
                         DatabaseHelper.Gasto.VIAGEM_ID))
-        );
+        );*/
         return gasto;
     }
 }
