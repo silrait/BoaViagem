@@ -5,6 +5,7 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.Menu;
@@ -17,6 +18,7 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -28,23 +30,27 @@ public class ViagemActivity extends Activity{
     private int ano, mes, dia;
     private Date dataChegada, dataSaida;
     private Button dataChegadaButton, dataSaidaButton;
+    private String id;
 
-    private DatePickerDialog.OnDateSetListener listener = new DatePickerDialog.OnDateSetListener() {
+    private DatePickerDialog.OnDateSetListener dataSaidaListener = new DatePickerDialog.OnDateSetListener() {
         @Override
         public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-            Button pickedButton = null;
             Date fullDate = new Date(year, month, dayOfMonth);
-            int id = view.getId();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyy");
 
-            if(R.id.dataSaida == id ){
-                pickedButton = dataSaidaButton;
-                dataSaida = fullDate;
-            } else if(R.id.dataChegada == id){
-                pickedButton = dataChegadaButton;
-                dataSaida = fullDate;
-            }
+            dataSaida = fullDate;
+            dataSaidaButton.setText(dateFormat.format(dataSaida));
+        }
+    };
 
-            if( pickedButton != null ) pickedButton.setText(dayOfMonth + "/" + (month+1) + "/" + year);
+    private DatePickerDialog.OnDateSetListener dataChegadaListener = new DatePickerDialog.OnDateSetListener() {
+        @Override
+        public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+            Date fullDate = new Date(year, month, dayOfMonth);
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyy");
+
+            dataChegada = fullDate;
+            dataChegadaButton.setText(dateFormat.format(dataChegada));
         }
     };
 
@@ -72,6 +78,11 @@ public class ViagemActivity extends Activity{
         radioGroup = (RadioGroup) findViewById(R.id.tipoViagem);
         helper = new DatabaseHelper(this);
 
+        id = getIntent().getStringExtra(Constantes.VIAGEM_ID);
+        if(id!=null){
+            prepararEdicao();
+        }
+
     }
 
     @Override
@@ -98,8 +109,10 @@ public class ViagemActivity extends Activity{
 
     @Override
     protected Dialog onCreateDialog(int id){
-        if(R.id.dataChegada == id || R.id.dataSaida == id){
-            return new DatePickerDialog(this, listener, ano, mes, dia);
+        if(R.id.dataChegada == id){
+            return new DatePickerDialog(this, dataChegadaListener, ano, mes, dia);
+        }else if( R.id.dataSaida == id){
+            return new DatePickerDialog(this, dataSaidaListener, ano, mes, dia);
         }
         return null;
     }
@@ -107,6 +120,34 @@ public class ViagemActivity extends Activity{
     public void selecionarData(View view){
         showDialog(view.getId());
     }
+
+    protected void prepararEdicao(){
+        SQLiteDatabase db = helper.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT tipo_viagem, destino, data_chegada, " +
+                "data_saida, quantidade_pessoas, orcamento" +
+                "FROM viagem WHERE _id = ?", new String[]{ id });
+
+        cursor.moveToFirst();
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
+        if(cursor.getInt(0) == Constantes.VIAGEM_LAZER ){
+            radioGroup.check(R.id.lazer);
+        }else{
+            radioGroup.check(R.id.negocios);
+        }
+
+        destino.setText(cursor.getString(1));
+        dataChegada = new Date( cursor.getLong(2));
+        dataSaida = new Date( cursor.getLong(3));
+        dataChegadaButton.setText( dateFormat.format(dataChegada));
+        dataSaidaButton.setText( dateFormat.format(dataSaida));
+        quantidadePessoas.setText( cursor.getString(4));
+        orcamento.setText(cursor.getString(5));
+        cursor.close();
+    }
+
 
     public void salvarViagem(View view){
         SQLiteDatabase db = helper.getWritableDatabase();
@@ -125,7 +166,14 @@ public class ViagemActivity extends Activity{
             values.put("tipo_viagem", Constantes.VIAGEM_NEGOCIO);
         }
 
-        long resultado = db.insert("viagem", null, values);
+        long resultado;
+
+        if( id == null){
+            resultado = db.insert("viagem", null, values);
+        }else{
+            resultado = db.update("viagem", values, "_id = ?", new String[]{ id });
+        }
+
 
         if(resultado != -1){
             Toast.makeText(this, getString(R.string.registro_salvo), Toast.LENGTH_SHORT).show();

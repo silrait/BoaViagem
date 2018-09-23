@@ -31,7 +31,6 @@ public class ViagemListActivity extends ListActivity
     private DatabaseHelper helper;
     private SimpleDateFormat dateFormat;
     private Double valorLimite;
-    private String id;
 
     private class ViagemViewBinder implements SimpleAdapter.ViewBinder {
         @Override
@@ -71,15 +70,6 @@ public class ViagemListActivity extends ListActivity
 
         getListView().setOnItemClickListener(this);
         this.alertDialog = criaAlertDialog();
-
-        id = getIntent().getStringExtra(Constantes.VIAGEM_ID);
-        if(id!=null){
-            prepararEdicao();
-        }
-    }
-
-    protected void prepararEdicao(){
-
     }
 
     protected double calcularTotalGasto(SQLiteDatabase db, String id){
@@ -156,6 +146,7 @@ public class ViagemListActivity extends ListActivity
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         this.viagemSelecionada = position;
         alertDialog.show();
+
     }
 
     @Override
@@ -177,10 +168,18 @@ public class ViagemListActivity extends ListActivity
             case 2:
                 startActivity( new Intent(this, GastoListActivity.class));
                 break;
-            case 3:
+            case DialogInterface.BUTTON_POSITIVE:
                 viagens.remove(this.viagemSelecionada);
+                removerViagem(id);
                 getListView().invalidateViews();
                 break;
         }
+    }
+
+    private void removerViagem(String id){
+        SQLiteDatabase db = helper.getWritableDatabase();
+        String[] where = new String[]{ id };
+        db.delete("gasto", "viagem_id = ?", where );
+        db.delete("viagem", "_id = ?", where );
     }
 }
