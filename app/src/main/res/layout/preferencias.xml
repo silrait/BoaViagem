@@ -8,6 +8,13 @@
             android:summary="@string/modo_viagem_sumario"
             android:title="@string/modo_viagem" />
 
+        <ListPreference
+            android:dependency="modo_viagem"
+            android:key="viagem_ativa"
+            android:title="@string/viagem_ativa"
+            android:dialogTitle="@string/viagem_ativa" />
+
+
         <EditTextPreference
             android:dialogTitle="@string/informar_valor_limite"
             android:key="valor_limite"

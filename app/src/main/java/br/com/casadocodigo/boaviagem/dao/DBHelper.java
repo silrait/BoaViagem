@@ -15,7 +15,7 @@ import br.com.casadocodigo.boaviagem.model.Viagem;
 
 public class DBHelper extends OrmLiteSqliteOpenHelper {
     private static final String DB_NAME = "BoaViagem.db";
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
 
     private static DBHelper helper = null;
     private Dao<Viagem, Long> viagemDAO = null;

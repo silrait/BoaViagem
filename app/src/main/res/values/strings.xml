@@ -41,6 +41,8 @@
     <string name="registro_salvo">Registro Salvo</string>
     <string name="viagem_removida">Viagem Removida</string>
     <string name="erro_salvar">Erro ao Salvar</string>
+    <string name="viagem_ativa">Viagem Ativa</string>
+    <string name="sem_viagem">Sem Viagens Cadastradas</string>
     <string-array name="categoria_gasto">
         <item>Alimentação</item>
         <item>Combustível</item>
